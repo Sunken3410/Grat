@@ -1,0 +1,117 @@
+{% extends 'main/logreglayout.html' %}
+{% block title %}Register — Grat{% endblock %}
+
+{% block body %}
+  <!-- ── Icon & Heading ─────────────────────────────── -->
+  <div class="auth-card-icon">🏋️</div>
+  <h1 class="auth-card-title">Create your account</h1>
+  <p class="auth-card-subtitle">Start your structured workout journey today.</p>
+
+  <!-- ── Error Message ──────────────────────────────── -->
+  {% if message %}
+    <div class="auth-alert" role="alert">
+      <span class="auth-alert-icon">⚠</span>
+      {{ message }}
+    </div>
+  {% endif %}
+
+  <!-- ── Register Form ──────────────────────────────── -->
+  <form
+    id="register-form"
+    method="post"
+    action="{% url 'main:register' %}"
+    novalidate
+  >
+    {% csrf_token %}
+
+    <div class="auth-field" id="field-reg-username">
+      <label class="auth-label" for="reg-username">Username</label>
+      <div class="auth-input-wrap">
+        <span class="auth-input-icon">👤</span>
+        <input
+          id="reg-username"
+          class="auth-input"
+          type="text"
+          name="username"
+          placeholder="Choose a username"
+          autocomplete="username"
+          required
+        >
+      </div>
+      <span class="auth-field-error" id="err-reg-username"></span>
+    </div>
+
+    <div class="auth-field" id="field-reg-email">
+      <label class="auth-label" for="reg-email">Email</label>
+      <div class="auth-input-wrap">
+        <span class="auth-input-icon">✉</span>
+        <input
+          id="reg-email"
+          class="auth-input"
+          type="email"
+          name="email"
+          placeholder="you@example.com"
+          autocomplete="email"
+          required
+        >
+      </div>
+      <span class="auth-field-error" id="err-reg-email"></span>
+    </div>
+
+    <div class="auth-field" id="field-reg-password">
+      <label class="auth-label" for="reg-password">Password</label>
+      <div class="auth-input-wrap">
+        <span class="auth-input-icon">🔒</span>
+        <input
+          id="reg-password"
+          class="auth-input"
+          type="password"
+          name="password"
+          placeholder="Create a password"
+          autocomplete="new-password"
+          required
+        >
+        <button type="button" class="auth-eye-btn" data-target="reg-password" aria-label="Toggle password visibility">
+          <span class="eye-icon">👁</span>
+        </button>
+      </div>
+      <!-- Strength bar -->
+      <div class="password-strength" id="password-strength" aria-label="Password strength">
+        <div class="strength-bar" id="strength-bar"></div>
+      </div>
+      <span class="strength-label" id="strength-label"></span>
+      <span class="auth-field-error" id="err-reg-password"></span>
+    </div>
+
+    <div class="auth-field" id="field-reg-confirm">
+      <label class="auth-label" for="reg-confirm">Confirm Password</label>
+      <div class="auth-input-wrap">
+        <span class="auth-input-icon">🔒</span>
+        <input
+          id="reg-confirm"
+          class="auth-input"
+          type="password"
+          name="confirm_password"
+          placeholder="Repeat your password"
+          autocomplete="new-password"
+          required
+        >
+        <button type="button" class="auth-eye-btn" data-target="reg-confirm" aria-label="Toggle confirm password visibility">
+          <span class="eye-icon">👁</span>
+        </button>
+      </div>
+      <span class="auth-field-error" id="err-reg-confirm"></span>
+    </div>
+
+    <button type="submit" class="auth-submit-btn" id="register-submit-btn">
+      <span class="btn-text">Create Account</span>
+      <span class="btn-arrow">→</span>
+    </button>
+  </form>
+
+  <!-- ── Switch Link ────────────────────────────────── -->
+  <p class="auth-switch">
+    Already have an account?
+    <a href="{% url 'main:login_view' %}" class="auth-switch-link">Log in →</a>
+  </p>
+{% endblock %}

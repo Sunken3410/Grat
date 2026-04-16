@@ -1,0 +1,127 @@
+{% extends 'main/layout.html' %}
+{% load static %}
+
+{% block body %}
+
+{% if alreadyEnteredInfo %}
+  <!-- WORKOUT DASHBOARD: Inject real DB data into JS via a JSON island. dynamic.js reads window.__GRAT_WORKOUT_DATA__ to render. -->
+
+
+  <script>
+    window.__GRAT_WORKOUT_DATA__ = {
+      plan: {
+        {% if days %}
+          split: "{{ days.0.workout_plan.plan_split|default:''|escapejs }}",
+          goal:  "{{ days.0.workout_plan.goal.goal|default:''|escapejs }}",
+          daysPerWeek: parseInt("{{ days|length }}", 10) || 0,
+        {% endif %}
+      },
+      days: [
+        {% for day in days %}
+        {
+          day: parseInt("{{ day.day|default:'0' }}", 10) || 0,
+          focus: "",
+          exercises: [
+            {% for ex in all_exercises %}
+              {% if ex.workout_day_id == day.id %}
+              {
+                Delete: "<a href=''>Delete</a>",
+                order: parseInt("{{ ex.order|default:'0' }}", 10) || 0,  
+                name:  "{{ ex.exercise.name_of_exercise|escapejs }}",
+                muscle:"{{ ex.exercise.muscle_group|default:''|escapejs }}",
+                sets:  parseInt("{{ ex.sets|default:'0' }}", 10) || 0,
+                reps:  parseInt("{{ ex.reps|default:'0' }}", 10) || 0,
+                url:   "{{ ex.exercise.exercise_url|default:''|escapejs }}"
+              },
+              {% endif %}
+            {% endfor %}
+          ],
+          cardio: [
+            {% for c in all_cardios %}
+              {% if c.workout_day_id == day.id %}
+              {
+                order:    parseInt("{{ c.order|default:'0' }}", 10) || 0,
+                name:     "{{ c.exercise.name_of_exercise|escapejs }}",
+                duration: "{{ c.duration_in_minutes|default:'0' }}",
+                distance: "{{ c.distance_in_km|default:'0' }}"
+              },
+              {% endif %}
+            {% endfor %}
+          ]
+        },
+        {% endfor %}
+      ]
+    };
+  </script>
+
+  <!-- ── Page Header ──────────────────────────────────── -->
+  <div class="page-header">
+    <p class="greeting">Welcome back 👋</p>
+    <h1>{{ user.username }}'s Workout Plan</h1>
+    <p class="subtitle">Click on a day to see your exercises &amp; cardio.</p>
+  </div>
+
+  <!-- ── Dashboard (rendered by dynamic.js) ─────────── -->
+  <div id="workout-dashboard"></div>
+
+{% else %}
+  <!-- GOAL SETUP FORM: shown when user hasn't set up their plan yet. -->
+
+  <div class="goal-section">
+    <div class="page-header" style="text-align:center;">
+      <p class="greeting">Let's get started</p>
+      <h1>Set Up Your Plan</h1>
+      <p class="subtitle">Tell us your goal and we'll build your perfect workout.</p>
+    </div>
+
+    <div class="form-card">
+      <div class="form-icon">🎯</div>
+      <h2>Your Goal</h2>
+      <p class="form-subtitle">Fill in the details below to generate your personalised workout plan.</p>
+
+      {% if message %}
+        <div class="alert">{{ message }}</div>
+      {% endif %}
+
+      <form method="post" action="{% url 'main:submit_goal' %}">
+        {% csrf_token %}
+
+        <div class="form-group">
+          <label for="goal-select">Training Goal</label>
+          <select id="goal-select" name="goal">
+            <option value="bulk">🏋️ Bulk — Build Muscle &amp; Strength</option>
+            <option value="cut">🔥 Cut — Lose Fat &amp; Stay Lean</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="days-select">Days per Week</label>
+          <select id="days-select" name="days_wanna_play">
+            <option value="3">3 days / week</option>
+            <option value="4">4 days / week</option>
+            <option value="5">5 days / week</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="description-input">Describe Your Goal</label>
+          <textarea
+            id="description-input"
+            name="description"
+            placeholder="e.g. I want to gain muscle and get stronger in 6 months..."
+            rows="4"
+          ></textarea>
+        </div>
+
+        <input
+          id="submit_goal_button"
+          type="submit"
+          value="Generate My Workout Plan →"
+          class="form-submit-btn"
+        >
+      </form>
+    </div>
+  </div>
+
+{% endif %}
+{% endblock %}

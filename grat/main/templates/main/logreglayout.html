@@ -1,0 +1,43 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Grat – Your structured gym workout companion.">
+    <title>{% block title %}Grat{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="{% static 'main/main.css' %}" rel="stylesheet">
+    <link href="{% static 'main/styles.css' %}" rel="stylesheet">
+  </head>
+  <body class="auth-body">
+
+    <!-- ── Decorative blobs ────────────────────────────── -->
+    <div class="auth-blob auth-blob-1" aria-hidden="true"></div>
+    <div class="auth-blob auth-blob-2" aria-hidden="true"></div>
+
+    <!-- ── Auth Page Shell ─────────────────────────────── -->
+    <div class="auth-page">
+
+      <!-- Brand mark -->
+      <a href="/" class="auth-brand">
+        <span class="brand-dot"></span>
+        Grat
+      </a>
+
+      <!-- Card -->
+      <div class="auth-card">
+        {% block body %}{% endblock %}
+      </div>
+
+      <!-- Footer note -->
+      <p class="auth-footer">
+        Your structured workout companion. Train smart. 💪
+      </p>
+
+    </div>
+
+    <script src="{% static 'main/dynamic.js' %}" defer></script>
+  </body>
+</html>

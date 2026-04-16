@@ -1,0 +1,75 @@
+{% extends 'main/logreglayout.html' %}
+{% block title %}Login — Grat{% endblock %}
+
+{% block body %}
+  <!-- ── Icon & Heading ─────────────────────────────── -->
+  <div class="auth-card-icon">🔐</div>
+  <h1 class="auth-card-title">Welcome back</h1>
+  <p class="auth-card-subtitle">Log in to continue your training.</p>
+
+  <!-- ── Error Message ──────────────────────────────── -->
+  {% if message %}
+    <div class="auth-alert" role="alert">
+      <span class="auth-alert-icon">⚠</span>
+      {{ message }}
+    </div>
+  {% endif %}
+
+  <!-- ── Login Form ─────────────────────────────────── -->
+  <form
+    id="login-form"
+    method="post"
+    action="{% url 'main:login_view' %}"
+    novalidate
+  >
+    {% csrf_token %}
+
+    <div class="auth-field" id="field-username">
+      <label class="auth-label" for="login-username">Username</label>
+      <div class="auth-input-wrap">
+        <span class="auth-input-icon">👤</span>
+        <input
+          id="login-username"
+          class="auth-input"
+          type="text"
+          name="username"
+          placeholder="Your username"
+          autocomplete="username"
+          required
+        >
+      </div>
+      <span class="auth-field-error" id="err-username"></span>
+    </div>
+
+    <div class="auth-field" id="field-password">
+      <label class="auth-label" for="login-password">Password</label>
+      <div class="auth-input-wrap">
+        <span class="auth-input-icon">🔒</span>
+        <input
+          id="login-password"
+          class="auth-input"
+          type="password"
+          name="password"
+          placeholder="Your password"
+          autocomplete="current-password"
+          required
+        >
+        <button type="button" class="auth-eye-btn" data-target="login-password" aria-label="Toggle password visibility">
+          <span class="eye-icon">👁</span>
+        </button>
+      </div>
+      <span class="auth-field-error" id="err-password"></span>
+    </div>
+
+    <button type="submit" class="auth-submit-btn" id="login-submit-btn">
+      <span class="btn-text">Log In</span>
+      <span class="btn-arrow">→</span>
+    </button>
+  </form>
+
+  <!-- ── Switch Link ────────────────────────────────── -->
+  <p class="auth-switch">
+    Don't have an account?
+    <a href="{% url 'main:register' %}" class="auth-switch-link">Create one →</a>
+  </p>
+{% endblock %}

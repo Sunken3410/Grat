@@ -1,0 +1,33 @@
+name_of_exercise,muscle_group,is_cardio,exercise_url
+Bench Press,chest,False,https://www.youtube.com/shorts/rT7DgCr-3pg
+Incline Bench Press,chest,False,https://www.youtube.com/shorts/8iPEnn-ltC8
+Cable Chest Fly,chest,False,https://www.youtube.com/shorts/eozdVDA78K0
+Push Up,chest,False,https://www.youtube.com/shorts/IODxDxX7oi4
+
+Pull Up,back,False,https://www.youtube.com/shorts/eGo4IYlbE5g
+Lat Pulldown,back,False,https://www.youtube.com/shorts/CAwf7n6Luuc
+Seated Cable Row,back,False,https://www.youtube.com/shorts/GZbfZ033f74
+Deadlift,back,False,https://www.youtube.com/shorts/op9kVnSso6Q
+
+Squat,leg,False,https://www.youtube.com/shorts/aclHkVaku9U
+Leg Press,leg,False,https://www.youtube.com/shorts/IZxyjW7MPJQ
+Leg Curl,leg,False,https://www.youtube.com/shorts/1Tq3QdYUuHs
+Lunges,leg,False,https://www.youtube.com/shorts/QOVaHwm-Q6U
+
+Barbell Curl,bicpe,False,https://www.youtube.com/shorts/ykJmrZ5v0Oo
+Hammer Curl,bicpe,False,https://www.youtube.com/shorts/zC3nLlEvin4
+
+Tricep Pushdown,tricpe,False,https://www.youtube.com/shorts/2-LAMcpzODU
+Overhead Tricep Extension,tricpe,False,https://www.youtube.com/shorts/_gsUck-7M74
+
+Shoulder Press,shoulder,False,https://www.youtube.com/shorts/qEwKCR5JCog
+Lateral Raise,shoulder,False,https://www.youtube.com/shorts/3VcKaXpzqRo
+Front Raise,shoulder,False,https://www.youtube.com/shorts/-t7fuZ0KhDA
+
+Crunch,abs,False,https://www.youtube.com/shorts/Xyd_fa5zoEU
+Plank,abs,False,https://www.youtube.com/shorts/pSHjTRCQxIw
+Leg Raise,abs,False,https://www.youtube.com/shorts/JB2oyawG9KI
+
+Running,leg,True,https://www.youtube.com/shorts/7u7X3l9z9xk
+Cycling,leg,True,https://www.youtube.com/shorts/1VY8Zp6R1H8
+Jump Rope,leg,True,https://www.youtube.com/shorts/UY7H5i7t7fU
