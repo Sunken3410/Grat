@@ -30,20 +30,22 @@ from django.shortcuts import get_object_or_404
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def get_all_exercises(request):
-    exercises=ExerciseLibrary.objects.all()
-    serializer= ExerciseLibrarySerializer(exercises,many=True)
-    return Response(serializer.data)
+    group = request.query_params.get("group")
+
+    queryset = ExerciseLibrary.objects.filter(is_active=True)
+
+    if group:
+        queryset = queryset.filter(muscle_group__iexact=group)
+
+    serializer = ExerciseLibrarySerializer(queryset, many=True)
+    return Response(serializer.data, status=200)
+
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def track_set(request):
-    serializer= SetProgressSerializer(data=request.data)
+    serializer= SetProgressSerializer(data=request.data, context={"request":request})
     if serializer.is_valid():
-        workout_session=serializer.validated_data["workout_session"]
-        if workout_session.user!=request.user:
-            return Response({"message":"You are not authorized to track this set"},status=status.HTTP_403_FORBIDDEN)
-        if workout_session.is_completed:
-            return Response({"message":"You cannot track this set because the session is completed"},status=status.HTTP_400_BAD_REQUEST)
         serializer.save()
         return Response(serializer.data,status=status.HTTP_201_CREATED)
     else:
@@ -52,13 +54,8 @@ def track_set(request):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def track_cardio(request):
-    serializer= CardioProgressSerializer(data=request.data)
+    serializer= CardioProgressSerializer(data=request.data, context={"request":request})
     if serializer.is_valid():
-        workout_session=serializer.validated_data["workout_session"]
-        if workout_session.user!=request.user:
-            return Response({"message":"You are not authorized to track this cardio"},status=status.HTTP_403_FORBIDDEN)
-        if workout_session.is_completed:
-            return Response({"message":"You cannot track this cardio because the session is completed"},status=status.HTTP_400_BAD_REQUEST)
         serializer.save()
         return Response(serializer.data,status=status.HTTP_201_CREATED)
     else:
@@ -69,28 +66,23 @@ def track_cardio(request):
 def start_session(request):
     if WorkoutSession.objects.filter(user=request.user,is_completed=False).exists():
         return Response({"message":"You cannot start this session because you have an incomplete session"},status=status.HTTP_400_BAD_REQUEST)
-    serializer= WorkoutSessionSerializer(data=request.data)
+    serializer= WorkoutSessionSerializer(data=request.data, context={"request":request})
     if serializer.is_valid():
-        workout_day=serializer.validated_data["workout_day"]
-        if workout_day.workout_plan.user!=request.user:
-            return Response({"message":"You are not authorized to start this session"},status=status.HTTP_403_FORBIDDEN)
-        serializer.save()
-        return Response(serializer.data,status=status.HTTP_201_CREATED)
+        serializer.save(user=request.user, is_completed=False)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
     else:
         return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+
+
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])#this does: it checks if the user is authenticated
 def end_session(request):
-    serializer=get_object_or_404(WorkoutSession,id=request.data["id"])
-    if serializer.is_completed:
+    session=get_object_or_404(WorkoutSession,id=request.data["id"],user=request.user)
+    if session.is_completed:
         return Response({"message":"You cannot end this session because it is already completed"},status=status.HTTP_400_BAD_REQUEST)
-    if not serializer:
-        return Response({"message":"You cannot end this session because it does not exist"},status=status.HTTP_404_NOT_FOUND)
-    if serializer.user!=request.user:
-        return Response({"message":"You are not authorized to end this session"},status=status.HTTP_403_FORBIDDEN)
-    serializer.is_completed=True # can i do this ? answer google: yes. if i do it would it be fine? answer google: yes
-    serializer.save()
-    return Response(serializer.data,status=status.HTTP_200_OK)
+    session.is_completed=True
+    session.save()
+    return Response({"message":"Session ended successfully"},status=status.HTTP_200_OK)
     
 
 @api_view(["DELETE"])
@@ -114,24 +106,20 @@ def delete_cardio(request,id):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def add_exercise(request):
-    serializer = PlannedExerciseSerializer(data=request.data)
+    serializer = PlannedExerciseSerializer(data=request.data,context={"request":request})
     if serializer.is_valid():
-        workout_day = serializer.validated_data["workout_day"]# 
-        if workout_day.workout_plan.user!=request.user:
-            return Response({"message":"You are not authorized to add this exercise"},status=status.HTTP_403_FORBIDDEN)
-        serializer.save()
+        exercise=serializer.save()
+        exercise.save()
         return Response(serializer.data,status=status.HTTP_201_CREATED)
     return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
         
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def add_cardio(request):
-    serializer = PlannedCardioSerializer(data=request.data)
+    serializer = PlannedCardioSerializer(data=request.data,context={"request":request})
     if serializer.is_valid():
-        workout_day = serializer.validated_data["workout_day"]
-        if workout_day.workout_plan.user!= request.user:
-            return Response({"message":"You are not authorized to add this cardio"},status=status.HTTP_403_FORBIDDEN)
-        serializer.save()
+        cardio=serializer.save()
+        cardio.save()
         return Response(serializer.data,status=status.HTTP_201_CREATED)
     return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
 

@@ -130,6 +130,8 @@ workout_day: user1's workout day, exercise: leg extention, sets: 3, reps: 10, or
 """
 
 class PlannedExercise(models.Model):
+    class Meta:
+        unique_together = ("workout_day", "exercise")
     workout_day=models.ForeignKey(WorkoutDay,on_delete=models.CASCADE)
     exercise=models.ForeignKey(ExerciseLibrary,on_delete=models.CASCADE)
 
@@ -153,6 +155,8 @@ e.g:
 workout_day: user1's workout day, exercise: running, duration_in_minutes: 30, distance_in_km: 5, order: 1
 """
 class PlannedCardio(models.Model):
+    class Meta:
+        unique_together = ("workout_day", "exercise")
     workout_day=models.ForeignKey(WorkoutDay,on_delete=models.CASCADE)
     exercise=models.ForeignKey(ExerciseLibrary,on_delete=models.CASCADE)
 

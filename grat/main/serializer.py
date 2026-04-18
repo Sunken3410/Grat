@@ -36,18 +36,7 @@ class ExerciseLibrarySerializer(serializers.ModelSerializer):
         if ExerciseLibrary.objects.filter(name_of_exercise=value).exists():
             raise serializers.ValidationError("Exercise already exists")
         return value
-    def validate_exercise_url(self,value):
-        if not value.startswith("https://"):
-            raise serializers.ValidationError("Invalid URL")
-        return value
-    def validate_is_cardio(self,value):
-        if value in [True,False]:
-            return value
-        raise serializers.ValidationError("Invalid value")
-    def validate_is_active(self,value):
-        if value in [True,False]:
-            return value
-        raise serializers.ValidationError("Invalid value")
+    
     
 class WorkoutPlanSerializer(serializers.ModelSerializer):
     user=UserSerializer(read_only=True)
@@ -77,64 +66,96 @@ class WorkoutDaySerializer(serializers.ModelSerializer):
 class PlannedExerciseSerializer(serializers.ModelSerializer):
     workout_day= serializers.PrimaryKeyRelatedField(queryset=WorkoutDay.objects.all())
     exercise= serializers.PrimaryKeyRelatedField(queryset=ExerciseLibrary.objects.filter(is_cardio=False))
+   
     class Meta:
         model= PlannedExercise
         fields=["workout_day", "exercise","reps","sets","order"]
+        #unique_together = ("workout_day", "exercise")
+
     def validate_reps(self,value):
         if 0<value<=20:
             return value
         raise serializers.ValidationError("Invalid reps")
+
+
     def validate_sets(self,value):
         if 0<value<=20:
             return value
         raise serializers.ValidationError("Invalid sets")
+
+
     def validate_order(self,value):
         if 0<value:
             return value
         raise serializers.ValidationError("Invalid order")
+
+
     def validate(self,attrs):#What does the attrs does? it is a dictionary that contains the data that is being sent to the serializer.
-        if attrs["exercise"].is_cardio:
-            raise serializers.ValidationError("Exercise is cardio")
+        request=self.context["request"]
+        if PlannedExercise.objects.filter(workout_day=attrs["workout_day"],exercise=attrs["exercise"]).exists():
+            raise serializers.ValidationError("Exercise already exists in this workout day")
+        if request.user != attrs["workout_day"].workout_plan.user:
+            raise serializers.ValidationError({
+            "workout_day": "Not your workout"
+            })
+
         return attrs
 
 class PlannedCardioSerializer(serializers.ModelSerializer):
+
     workout_day= serializers.PrimaryKeyRelatedField(queryset=WorkoutDay.objects.all())
     exercise= serializers.PrimaryKeyRelatedField(queryset=ExerciseLibrary.objects.filter(is_cardio=True))
+    
     class Meta:
         model= PlannedCardio
         fields=["workout_day", "exercise","duration_in_minutes","distance_in_km","order"]
+        #unique_together = ("workout_day", "exercise")
+    
     def validate_duration_in_minutes(self,value):
         if 0<value:
             return value
         raise serializers.ValidationError("Invalid duration in minutes")
+    
     def validate_distance_in_km(self,value):
         if 0<value:
             return value
         raise serializers.ValidationError("Invalid distance in km")
+    
     def validate_order(self,value):
         if 0<value:
             return value
         raise serializers.ValidationError("Invalid order")
+    
     def validate(self,attrs):#What does the attrs does? it is a dictionary that contains the data that is being sent to the serializer.
-        if not attrs["exercise"].is_cardio:
-            raise serializers.ValidationError("Exercise is not cardio")
+        request=self.context["request"]
+        
+        if request.user != attrs["workout_day"].workout_plan.user:
+            raise serializers.ValidationError({
+    "workout_day": "Not your workout"
+})
         return attrs
 
 
 class WorkoutSessionSerializer(serializers.ModelSerializer):
-    user=UserSerializer(read_only=True)
-    workout_day= WorkoutDaySerializer(read_only=True)
+    user=serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+    workout_day= serializers.PrimaryKeyRelatedField(queryset=WorkoutDay.objects.all())
+    
     class Meta:
         model= WorkoutSession
         fields=["user","workout_day","date","is_completed"]
-    def validate_is_completed(self,value):
-        if value in [True,False]:
-            return value
-        raise serializers.ValidationError("Invalid value")
+
+    def validate(self,attrs):
+        request=self.context["request"]
+        if request.user != attrs["user"]:
+            raise serializers.ValidationError({
+                "workout_session":"Not your workout"
+            })
+        
+        return attrs# what does this do? answer: it returns the validated data
 
 class SetProgressSerializer(serializers.ModelSerializer):
-    workout_session= WorkoutSessionSerializer(read_only=True)
-    planned_exercise= PlannedExerciseSerializer(read_only=True)
+    workout_session= serializers.PrimaryKeyRelatedField(queryset=WorkoutSession.objects.all())
+    planned_exercise= serializers.PrimaryKeyRelatedField(queryset=PlannedExercise.objects.all())
     class Meta:
         model= SetProgress
         fields=["workout_session","planned_exercise","reps","weight","current_weight"]
@@ -150,10 +171,25 @@ class SetProgressSerializer(serializers.ModelSerializer):
         if 0<value:
             return value
         raise serializers.ValidationError("Invalid current weight")
+    def validate(self,attrs):
+        request= self.context["request"]
+        if request.user != attrs["workout_session"].user:
+            raise serializers.ValidationError({
+                "workout_session":"Not your workout"
+            })
+        if attrs["workout_session"].is_completed:
+            raise serializers.ValidationError({
+                "workout_session":"Session is already completed"
+            })
+        if attrs["planned_exercise"].workout_day != attrs["workout_session"].workout_day:
+            raise serializers.ValidationError({
+                "planned_exercise":"Exercise is not in this workout day"
+            })
+        return attrs
 
 class CardioProgressSerializer(serializers.ModelSerializer):
-    workout_session= WorkoutSessionSerializer(read_only=True)
-    planned_cardio= PlannedCardioSerializer(read_only=True)
+    workout_session= serializers.PrimaryKeyRelatedField(queryset=WorkoutSession.objects.all())
+    planned_cardio= serializers.PrimaryKeyRelatedField(queryset=PlannedCardio.objects.all())
     class Meta:
         model= CardioProgress
         fields=["workout_session","planned_cardio","duration_in_minutes","distance_in_km"]
@@ -165,3 +201,18 @@ class CardioProgressSerializer(serializers.ModelSerializer):
         if 0<value:
             return value
         raise serializers.ValidationError("Invalid distance in km")
+    def validate(self, attrs):
+        request= self.context["request"]
+        if request.user != attrs["workout_session"].user:
+            raise serializers.ValidationError({
+                "workout_session": "not your workout_session"
+            })
+        if attrs["workout_session"].is_completed:
+            raise serializers.ValidationError({
+                "workout_session": "Session is already completed"
+            })
+        if attrs["planned_cardio"].workout_day != attrs["workout_session"].workout_day:
+            raise serializers.ValidationError({
+                "planned_cardio": "Cardio is not in this workout day"
+            })
+        return attrs
