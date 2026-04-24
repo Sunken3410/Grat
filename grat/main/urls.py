@@ -20,5 +20,6 @@ urlpatterns = [
     path("track_set/",views.track_set,name="track_set"),
     path("track_cardio/",views.track_cardio,name="track_cardio"),
     path("get_all_exercises/",views.get_all_exercises,name="get_all_exercises"),
-    
+    path("last_tracked_sets/<int:planned_exercise_id>/<int:limit>/",views.last_tracked_sets,name="last_tracked_sets"),
+    path("last_tracked_cardio/<int:planned_cardio_id>/<int:limit>/",views.last_tracked_cardio,name="last_tracked_cardio"),
     ]
