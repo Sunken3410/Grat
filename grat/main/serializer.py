@@ -27,7 +27,7 @@ class UserGoalSerializer(serializers.ModelSerializer):
 class ExerciseLibrarySerializer(serializers.ModelSerializer):
     class Meta:
         model= ExerciseLibrary
-        fields=["muscle_group","name_of_exercise","exercise_url","is_cardio","is_active"]
+        fields=["id","muscle_group","name_of_exercise","exercise_url","is_cardio","is_active"]
     def validate_muscle_group(self,value):
         if value in ["chest","back","leg","bicpe","tricpe","shoulder","abs","cardio"]:
             return value
@@ -137,7 +137,7 @@ class PlannedCardioSerializer(serializers.ModelSerializer):
 
 
 class WorkoutSessionSerializer(serializers.ModelSerializer):
-    user=serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+    user=serializers.PrimaryKeyRelatedField(read_only=True)#(queryset=User.objects.all())
     workout_day= serializers.PrimaryKeyRelatedField(queryset=WorkoutDay.objects.all())
     
     class Meta:
@@ -146,27 +146,31 @@ class WorkoutSessionSerializer(serializers.ModelSerializer):
 
     def validate(self,attrs):
         request=self.context["request"]
-        if request.user != attrs["user"]:
+        workout_day = attrs.get("workout_day")
+        if workout_day and request.user != workout_day.workout_plan.user:
             raise serializers.ValidationError({
-                "workout_session":"Not your workout"
+                "workout_day":"Not your workout"
             })
         
         return attrs# what does this do? answer: it returns the validated data
 
 class SetProgressSerializer(serializers.ModelSerializer):
     workout_session= serializers.PrimaryKeyRelatedField(queryset=WorkoutSession.objects.all())
-    planned_exercise= serializers.PrimaryKeyRelatedField(queryset=PlannedExercise.objects.all())
+    planned_exercise= serializers.PrimaryKeyRelatedField(
+        queryset=PlannedExercise.objects.all(),
+        source="exercise",
+    )
     class Meta:
         model= SetProgress
-        fields=["workout_session","planned_exercise","reps","weight","current_weight"]
+        fields=["workout_session","planned_exercise","reps","set_number","current_weight"]
     def validate_reps(self,value):
         if 0<value<=20:
             return value
         raise serializers.ValidationError("Invalid reps")
-    def validate_weight(self,value):
-        if 0<value:
+    def validate_set_number(self,value):
+        if 0<value<=20:
             return value
-        raise serializers.ValidationError("Invalid weight")
+        raise serializers.ValidationError("Invalid set number")
     def validate_current_weight(self,value):
         if 0<value:
             return value
@@ -181,7 +185,7 @@ class SetProgressSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({
                 "workout_session":"Session is already completed"
             })
-        if attrs["planned_exercise"].workout_day != attrs["workout_session"].workout_day:
+        if attrs["exercise"].workout_day != attrs["workout_session"].workout_day:
             raise serializers.ValidationError({
                 "planned_exercise":"Exercise is not in this workout day"
             })
@@ -189,7 +193,10 @@ class SetProgressSerializer(serializers.ModelSerializer):
 
 class CardioProgressSerializer(serializers.ModelSerializer):
     workout_session= serializers.PrimaryKeyRelatedField(queryset=WorkoutSession.objects.all())
-    planned_cardio= serializers.PrimaryKeyRelatedField(queryset=PlannedCardio.objects.all())
+    planned_cardio= serializers.PrimaryKeyRelatedField(
+        queryset=PlannedCardio.objects.all(),
+        source="exercise",
+    )
     class Meta:
         model= CardioProgress
         fields=["workout_session","planned_cardio","duration_in_minutes","distance_in_km"]
@@ -211,7 +218,7 @@ class CardioProgressSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({
                 "workout_session": "Session is already completed"
             })
-        if attrs["planned_cardio"].workout_day != attrs["workout_session"].workout_day:
+        if attrs["exercise"].workout_day != attrs["workout_session"].workout_day:
             raise serializers.ValidationError({
                 "planned_cardio": "Cardio is not in this workout day"
             })

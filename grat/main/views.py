@@ -25,7 +25,46 @@ from rest_framework.decorators import api_view,permission_classes
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
+from django.db.models import Q
 # Create your views here.
+
+
+def _get_previous_session_for_exercise(user, current_session, exercise_library_id):
+    session_filters = Q(user=user)
+
+    if current_session:
+        session_filters &= ~Q(id=current_session.id)
+        session_filters &= Q(date__lt=current_session.date) | Q(
+            date=current_session.date,
+            id__lt=current_session.id,
+        )
+
+    return (
+        WorkoutSession.objects.filter(session_filters)
+        .filter(setprogress__exercise__exercise_id=exercise_library_id)
+        .distinct()
+        .order_by("-date", "-id")
+        .first()
+    )
+
+
+def _get_previous_session_for_cardio(user, current_session, exercise_library_id):
+    session_filters = Q(user=user)
+
+    if current_session:
+        session_filters &= ~Q(id=current_session.id)
+        session_filters &= Q(date__lt=current_session.date) | Q(
+            date=current_session.date,
+            id__lt=current_session.id,
+        )
+
+    return (
+        WorkoutSession.objects.filter(session_filters)
+        .filter(cardioprogress__exercise__exercise_id=exercise_library_id)
+        .distinct()
+        .order_by("-date", "-id")
+        .first()
+    )
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -33,7 +72,25 @@ def last_tracked_cardio(request, planned_cardio_id,limit=1):
     planned_cardio=get_object_or_404(PlannedCardio,id=planned_cardio_id)
     if planned_cardio.workout_day.workout_plan.user!=request.user:
         return Response({"data":None,"message":"You are not authorized to view this data"},status=status.HTTP_403_FORBIDDEN)
-    last_cardio=CardioProgress.objects.filter(planned_cardio=planned_cardio).order_by("-date")[:limit]
+
+    current_session = WorkoutSession.objects.filter(
+        user=request.user,
+        workout_day=planned_cardio.workout_day,
+        is_completed=False,
+    ).order_by("-date", "-id").first()
+
+    previous_session = _get_previous_session_for_cardio(
+        request.user,
+        current_session,
+        planned_cardio.exercise_id,
+    )
+    if not previous_session:
+        return Response({"data":[],"message":"No previous cardio session found"},status=status.HTTP_200_OK)
+
+    last_cardio=CardioProgress.objects.filter(
+        workout_session=previous_session,
+        exercise__exercise_id=planned_cardio.exercise_id,
+    ).order_by("-id")[:limit]
     serializer=CardioProgressSerializer(last_cardio,many=True,context={"request":request})
     return Response({"data":serializer.data,"message":"Data fetched successfully"},status=status.HTTP_200_OK)
 
@@ -43,7 +100,25 @@ def last_tracked_sets(request, planned_exercise_id,limit=3):
     planned_exercise=get_object_or_404(PlannedExercise,id=planned_exercise_id)
     if planned_exercise.workout_day.workout_plan.user!=request.user:
         return Response({"data":None,"message":"You are not authorized to view this data"},status=status.HTTP_403_FORBIDDEN)
-    last_sets=SetProgress.objects.filter(planned_exercise=planned_exercise).order_by("-date")[:limit]
+
+    current_session = WorkoutSession.objects.filter(
+        user=request.user,
+        workout_day=planned_exercise.workout_day,
+        is_completed=False,
+    ).order_by("-date", "-id").first()
+
+    previous_session = _get_previous_session_for_exercise(
+        request.user,
+        current_session,
+        planned_exercise.exercise_id,
+    )
+    if not previous_session:
+        return Response({"data":[],"message":"No previous session found"},status=status.HTTP_200_OK)
+
+    last_sets=SetProgress.objects.filter(
+        workout_session=previous_session,
+        exercise__exercise_id=planned_exercise.exercise_id,
+    ).order_by("set_number","id")[:limit]
     serializer=SetProgressSerializer(last_sets,many=True,context={"request":request})
     return Response({"data":serializer.data,"message":"Data fetched successfully"},status=status.HTTP_200_OK)
 
@@ -243,3 +318,23 @@ def register(request):
         return HttpResponseRedirect(reverse("main:index"))
     else:
         return render(request,'main/register.html')
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def active_session(request):
+    """Return the user's current active (incomplete) WorkoutSession, or null."""
+    session = WorkoutSession.objects.filter(
+        user=request.user, is_completed=False
+    ).select_related("workout_day").first()
+
+    if not session:
+        return Response({"session": None}, status=status.HTTP_200_OK)
+
+    return Response({
+        "session": {
+            "id": session.id,
+            "workout_day": session.workout_day.id,
+            "date": str(session.date),
+            "is_completed": session.is_completed,
+        }
+    }, status=status.HTTP_200_OK)

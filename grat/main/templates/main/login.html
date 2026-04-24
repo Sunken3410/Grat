@@ -7,14 +7,6 @@
   <h1 class="auth-card-title">Welcome back</h1>
   <p class="auth-card-subtitle">Log in to continue your training.</p>
 
-  <!-- ── Error Message ──────────────────────────────── -->
-  {% if message %}
-    <div class="auth-alert" role="alert">
-      <span class="auth-alert-icon">⚠</span>
-      {{ message }}
-    </div>
-  {% endif %}
-
   <!-- ── Login Form ─────────────────────────────────── -->
   <form
     id="login-form"
@@ -23,6 +15,9 @@
     novalidate
   >
     {% csrf_token %}
+    <div class="auth-form-error{% if not message %} is-hidden{% endif %}" id="login-form-error" role="alert">
+      {% if message %}{{ message }}{% endif %}
+    </div>
 
     <div class="auth-field" id="field-username">
       <label class="auth-label" for="login-username">Username</label>

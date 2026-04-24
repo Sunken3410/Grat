@@ -19,13 +19,14 @@
       days: [
         {% for day in days %}
         {
+          id: parseInt("{{ day.id|default:'0' }}", 10) || 0,
           day: parseInt("{{ day.day|default:'0' }}", 10) || 0,
           focus: "",
           exercises: [
             {% for ex in all_exercises %}
               {% if ex.workout_day_id == day.id %}
               {
-                Delete: "<a href=''>Delete</a>",
+                id: parseInt("{{ ex.id|default:'0' }}", 10) || 0,
                 order: parseInt("{{ ex.order|default:'0' }}", 10) || 0,  
                 name:  "{{ ex.exercise.name_of_exercise|escapejs }}",
                 muscle:"{{ ex.exercise.muscle_group|default:''|escapejs }}",
@@ -40,6 +41,7 @@
             {% for c in all_cardios %}
               {% if c.workout_day_id == day.id %}
               {
+                id: parseInt("{{ c.id|default:'0' }}", 10) || 0,
                 order:    parseInt("{{ c.order|default:'0' }}", 10) || 0,
                 name:     "{{ c.exercise.name_of_exercise|escapejs }}",
                 duration: "{{ c.duration_in_minutes|default:'0' }}",
