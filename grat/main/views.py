@@ -29,6 +29,27 @@ from django.shortcuts import get_object_or_404
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+def last_tracked_cardio(request, planned_cardio_id,limit=1):
+    planned_cardio=get_object_or_404(PlannedCardio,id=planned_cardio_id)
+    if planned_cardio.workout_day.workout_plan.user!=request.user:
+        return Response({"data":None,"message":"You are not authorized to view this data"},status=status.HTTP_403_FORBIDDEN)
+    last_cardio=CardioProgress.objects.filter(planned_cardio=planned_cardio).order_by("-date")[:limit]
+    serializer=CardioProgressSerializer(last_cardio,many=True,context={"request":request})
+    return Response({"data":serializer.data,"message":"Data fetched successfully"},status=status.HTTP_200_OK)
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def last_tracked_sets(request, planned_exercise_id,limit=3):
+    planned_exercise=get_object_or_404(PlannedExercise,id=planned_exercise_id)
+    if planned_exercise.workout_day.workout_plan.user!=request.user:
+        return Response({"data":None,"message":"You are not authorized to view this data"},status=status.HTTP_403_FORBIDDEN)
+    last_sets=SetProgress.objects.filter(planned_exercise=planned_exercise).order_by("-date")[:limit]
+    serializer=SetProgressSerializer(last_sets,many=True,context={"request":request})
+    return Response({"data":serializer.data,"message":"Data fetched successfully"},status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def get_all_exercises(request):
     group = request.query_params.get("group")
 
