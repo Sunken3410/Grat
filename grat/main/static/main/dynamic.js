@@ -264,66 +264,46 @@ function renderExercisePanel(panel, day) {
   panel.appendChild(header);
 
   // ── Exercises
-  if (day.exercises && day.exercises.length > 0) {
-    const exTitle = document.createElement("div");
-    exTitle.className = "section-title";
-    exTitle.innerHTML = `<span>Exercises</span><button type="button" class="session-cta-btn panel-mini-btn add-exercise-btn">+ Add Exercise</button>`;
-    panel.appendChild(exTitle);
+  const exTitle = document.createElement("div");
+  exTitle.className = "section-title";
+  exTitle.innerHTML = `<span>Exercises</span><button type="button" class="session-cta-btn panel-mini-btn add-exercise-btn">+ Add Exercise</button>`;
+  panel.appendChild(exTitle);
 
-    const list = document.createElement("div");
-    list.className = "exercises-list";
+  const list = document.createElement("div");
+  list.className = "exercises-list";
+  if (day.exercises && day.exercises.length > 0) {
     day.exercises
       .sort((a, b) => a.order - b.order)
       .forEach(ex => list.appendChild(renderExerciseCard(ex, { showDelete: true })));
-    const addCard = document.createElement("button");
-    addCard.type = "button";
-    addCard.className = "add-exercise-card";
-    addCard.innerHTML = `<span class="add-exercise-plus">+</span><span>Add Exercise</span>`;
-    addCard.addEventListener("click", async () => addExerciseToDay(day));
-    list.appendChild(addCard);
-    panel.appendChild(list);
-  } else {
-    const list = document.createElement("div");
-    list.className = "exercises-list";
-    const addCard = document.createElement("button");
-    addCard.type = "button";
-    addCard.className = "add-exercise-card";
-    addCard.innerHTML = `<span class="add-exercise-plus">+</span><span>Add Exercise</span>`;
-    addCard.addEventListener("click", async () => addExerciseToDay(day));
-    list.appendChild(addCard);
-    panel.appendChild(list);
   }
+  const addCard = document.createElement("button");
+  addCard.type = "button";
+  addCard.className = "add-exercise-card";
+  addCard.innerHTML = `<span class="add-exercise-plus">+</span><span>Add Exercise</span>`;
+  addCard.addEventListener("click", async () => addExerciseToDay(day));
+  list.appendChild(addCard);
+  panel.appendChild(list);
 
   // ── Cardio
-  if (day.cardio && day.cardio.length > 0) {
-    const cardioTitle = document.createElement("div");
-    cardioTitle.className = "section-title";
-    cardioTitle.innerHTML = `<span>Cardio</span><button type="button" class="session-cta-btn panel-mini-btn add-cardio-btn">+ Add Cardio</button>`;
-    panel.appendChild(cardioTitle);
+  const cardioTitle = document.createElement("div");
+  cardioTitle.className = "section-title";
+  cardioTitle.innerHTML = `<span>Cardio</span><button type="button" class="session-cta-btn panel-mini-btn add-cardio-btn">+ Add Cardio</button>`;
+  panel.appendChild(cardioTitle);
 
-    const cardioList = document.createElement("div");
-    cardioList.className = "cardio-list";
+  const cardioList = document.createElement("div");
+  cardioList.className = "cardio-list";
+  if (day.cardio && day.cardio.length > 0) {
     day.cardio
       .sort((a, b) => a.order - b.order)
       .forEach(c => cardioList.appendChild(renderCardioCard(c, { showDelete: true })));
-    const addCardioCard = document.createElement("button");
-    addCardioCard.type = "button";
-    addCardioCard.className = "add-exercise-card add-cardio-card";
-    addCardioCard.innerHTML = `<span class="add-exercise-plus">+</span><span>Add Cardio</span>`;
-    addCardioCard.addEventListener("click", async () => addCardioToDay(day));
-    cardioList.appendChild(addCardioCard);
-    panel.appendChild(cardioList);
-  } else {
-    const cardioList = document.createElement("div");
-    cardioList.className = "cardio-list";
-    const addCardioCard = document.createElement("button");
-    addCardioCard.type = "button";
-    addCardioCard.className = "add-exercise-card add-cardio-card";
-    addCardioCard.innerHTML = `<span class="add-exercise-plus">+</span><span>Add Cardio</span>`;
-    addCardioCard.addEventListener("click", async () => addCardioToDay(day));
-    cardioList.appendChild(addCardioCard);
-    panel.appendChild(cardioList);
   }
+  const addCardioCard = document.createElement("button");
+  addCardioCard.type = "button";
+  addCardioCard.className = "add-exercise-card add-cardio-card";
+  addCardioCard.innerHTML = `<span class="add-exercise-plus">+</span><span>Add Cardio</span>`;
+  addCardioCard.addEventListener("click", async () => addCardioToDay(day));
+  cardioList.appendChild(addCardioCard);
+  panel.appendChild(cardioList);
 
   bindDayMutationControls(panel, day);
 
@@ -400,8 +380,12 @@ function renderCardioCard(c, options = {}) {
       </div>
     </div>
     <span class="muscle-badge cardio">🏃 Cardio</span>
+    <button type="button" class="exercise-link-btn last-cardio-btn" data-cardio-id="${c.id}" data-cardio-name="${c.name}">Last Sessions</button>
     ${options.showDelete ? `<button type="button" class="exercise-link-btn delete-item-btn delete-day-cardio-btn" data-cardio-id="${c.id}">Delete Cardio</button>` : ""}
   `;
+
+  const lastCardioBtn = card.querySelector(".last-cardio-btn");
+  lastCardioBtn?.addEventListener("click", () => openLastCardioModal(c.id, c.name));
 
   return card;
 }
@@ -446,8 +430,9 @@ async function startSession(day) {
   clearDashboardError();
   try {
     const payload = { workout_day: day.id };
-    const created = await apiRequest("/start_session/", { method: "POST", body: JSON.stringify(payload) });
-    appState.activeSession = created;
+    await apiRequest("/start_session/", { method: "POST", body: JSON.stringify(payload) });
+    const activeData = await apiRequest("/active_session/", { method: "GET" });
+    appState.activeSession = activeData.session;
     appState.selectedDay = day.id;
     updateActiveSessionUI();
     await openSessionPanel(day);
@@ -522,6 +507,7 @@ function renderSessionShell(day) {
               <button type="button" class="session-cta-btn track-cardio-btn" data-cardio-id="${c.id}">Track Cardio</button>
               <button type="button" class="exercise-link-btn delete-item-btn delete-session-cardio-btn" data-cardio-id="${c.id}">Delete Cardio</button>
             </div>
+            <button type="button" class="exercise-link-btn last-session-cardio-btn" data-cardio-id="${c.id}" data-cardio-name="${c.name}">Last Sessions</button>
             <div class="progress-inline" id="last-cardio-${c.id}"></div>
           </div>
         </div>
@@ -625,6 +611,12 @@ function bindCardioTrackers(panel) {
     btn.addEventListener("click", async () => {
       const cardioId = Number(btn.dataset.cardioId);
       await deleteCardioById(cardioId);
+    });
+  });
+
+  panel.querySelectorAll(".last-session-cardio-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      openLastCardioModal(Number(btn.dataset.cardioId), btn.dataset.cardioName || "Cardio");
     });
   });
 
@@ -1038,6 +1030,53 @@ async function openLastSetsModal(exerciseId, exerciseName) {
   } catch (error) {
     const content = overlay.querySelector("#last-sets-content");
     if (content) content.innerHTML = `<div class="app-modal-text">${error.message || "Could not load last sets."}</div>`;
+  }
+}
+
+async function openLastCardioModal(cardioId, cardioName) {
+  const existing = document.getElementById("last-cardio-overlay");
+  if (existing) existing.remove();
+  const overlay = document.createElement("div");
+  overlay.id = "last-cardio-overlay";
+  overlay.className = "app-modal-overlay";
+  overlay.innerHTML = `
+    <div class="app-modal-card app-modal-wide" role="dialog" aria-modal="true" aria-label="Last sessions">
+      <div class="video-modal-header">
+        <h3 class="app-modal-title">Last Sessions • ${cardioName}</h3>
+        <button type="button" class="panel-close-btn" id="last-cardio-close" aria-label="Close">✕</button>
+      </div>
+      <div id="last-cardio-content" class="last-sets-list">
+        <div class="app-modal-text">Loading...</div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.querySelector("#last-cardio-close")?.addEventListener("click", () => overlay.remove());
+  overlay.addEventListener("click", (event) => {
+    if (event.target === overlay) overlay.remove();
+  });
+
+  try {
+    const result = await apiRequest(`/last_tracked_cardio/${cardioId}/5/`, { method: "GET" });
+    const sessions = result.data || [];
+    const content = overlay.querySelector("#last-cardio-content");
+    if (!content) return;
+    if (!sessions.length) {
+      content.innerHTML = `<div class="app-modal-text">No tracked sessions yet for this cardio.</div>`;
+      return;
+    }
+    content.innerHTML = sessions
+      .map((session) => `
+        <div class="last-set-row">
+          <span class="last-set-chip">Session</span>
+          <span>${session.duration_in_minutes ?? "-"} min</span>
+          <span>${session.distance_in_km ?? "-"} km</span>
+        </div>
+      `)
+      .join("");
+  } catch (error) {
+    const content = overlay.querySelector("#last-cardio-content");
+    if (content) content.innerHTML = `<div class="app-modal-text">${error.message || "Could not load last cardio sessions."}</div>`;
   }
 }
 
