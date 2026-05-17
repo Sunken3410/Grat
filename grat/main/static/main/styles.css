@@ -720,10 +720,11 @@
 /* ── Auth Body Override ──────────────────────────────── */
 body.auth-body {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
   min-height: 100vh;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 /* ── Decorative Blobs ────────────────────────────────── */
@@ -766,10 +767,13 @@ body.auth-body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: var(--space-lg);
   width: 100%;
   max-width: 460px;
-  padding: var(--space-lg);
+  min-height: 100vh;
+  padding: var(--space-lg) 16px;
+  box-sizing: border-box;
 }
 
 /* ── Auth Brand ──────────────────────────────────────── */
@@ -778,16 +782,35 @@ body.auth-body {
   align-items: center;
   gap: var(--space-sm);
   font-family: var(--font-display);
-  font-size: 1.6rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  font-size: clamp(2.5rem, 7vw, 3.5rem);
+  font-weight: 900;
+  letter-spacing: 0;
   color: var(--clr-text-primary);
+  background: linear-gradient(135deg, var(--clr-text-primary) 25%, var(--clr-accent), var(--clr-accent-2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 10px 30px var(--clr-accent-glow);
   text-decoration: none;
+  margin-bottom: var(--space-sm);
+}
+
+.auth-brand .brand-dot {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--clr-accent);
+  box-shadow: 0 0 16px var(--clr-accent);
+  -webkit-text-fill-color: initial;
 }
 
 /* ── Auth Card ───────────────────────────────────────── */
 .auth-card {
   width: 100%;
+  max-width: 420px;
+  box-sizing: border-box;
   background: rgba(22, 25, 33, 0.9);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
@@ -917,6 +940,8 @@ body.auth-body {
 /* ── Input ───────────────────────────────────────────── */
 .auth-input {
   width: 100%;
+  min-height: 44px;
+  box-sizing: border-box;
   background: var(--clr-surface-2);
   border: 1px solid var(--clr-border);
   border-radius: var(--radius-md);
@@ -945,6 +970,8 @@ body.auth-body {
 .auth-eye-btn {
   position: absolute;
   right: 12px;
+  width: 44px;
+  height: 44px;
   background: none;
   border: none;
   cursor: pointer;
@@ -953,6 +980,7 @@ body.auth-body {
   font-size: 1rem;
   display: flex;
   align-items: center;
+  justify-content: center;
   transition: color var(--t-fast);
 }
 
@@ -1000,6 +1028,8 @@ body.auth-body {
 /* ── Submit Button ───────────────────────────────────── */
 .auth-submit-btn {
   width: 100%;
+  min-height: 44px;
+  box-sizing: border-box;
   margin-top: var(--space-lg);
   padding: 14px var(--space-lg);
   background: linear-gradient(135deg, var(--clr-accent), #8b5cf6);
@@ -1292,7 +1322,12 @@ body.auth-body {
 /* ── Auth Responsive ─────────────────────────────────── */
 @media (max-width: 480px) {
   .auth-page {
-    padding: var(--space-md);
+    padding: var(--space-md) 16px;
+  }
+
+  .auth-brand {
+    font-size: clamp(2rem, 13vw, 2.8rem);
+    margin-bottom: 0;
   }
 
   .auth-card {
