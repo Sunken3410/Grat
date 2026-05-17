@@ -3,6 +3,7 @@
 
 {% block body %}
 
+<div id="workout-plan-view">
 {% if alreadyEnteredInfo %}
   <!-- WORKOUT DASHBOARD: Inject real DB data into JS via a JSON island. dynamic.js reads window.__GRAT_WORKOUT_DATA__ to render. -->
 
@@ -126,4 +127,82 @@
   </div>
 
 {% endif %}
+</div>
+
+<div id="calculator-view" class="calculator-page-view" hidden>
+  <div class="page-header">
+    <p class="greeting">Training tools</p>
+    <h1>Calculator</h1>
+    <p class="subtitle">Estimate your daily calories and protein target.</p>
+  </div>
+  <div class="form-card calculator-page-card" id="calculator-page-card">
+    <div class="calc-tabs" role="tablist" aria-label="Calculator type">
+      <button type="button" class="calc-tab-btn active" data-calc-tab="calories" role="tab" aria-selected="true">Calories Calculator</button>
+      <button type="button" class="calc-tab-btn" data-calc-tab="protein" role="tab" aria-selected="false">Protein Calculator</button>
+    </div>
+
+    <div class="auth-form-error is-hidden" id="calculator-error" role="alert"></div>
+
+    <section class="calc-panel" id="calc-panel-calories" role="tabpanel">
+      <div class="app-modal-grid">
+        <div>
+          <label class="app-modal-label" for="calc-weight">Weight (kg)</label>
+          <input id="calc-weight" class="track-input app-modal-input" type="number" min="1" step="0.1" required>
+        </div>
+        <div>
+          <label class="app-modal-label" for="calc-height">Height (cm)</label>
+          <input id="calc-height" class="track-input app-modal-input" type="number" min="1" step="0.1" required>
+        </div>
+        <div>
+          <label class="app-modal-label" for="calc-age">Age (years)</label>
+          <input id="calc-age" class="track-input app-modal-input" type="number" min="1" step="1" required>
+        </div>
+        <div>
+          <label class="app-modal-label" for="calc-sex">Sex</label>
+          <select id="calc-sex" class="track-input app-modal-input" required>
+            <option value="">Select</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
+        </div>
+      </div>
+      <label class="app-modal-label" for="calc-activity">Activity Level</label>
+      <select id="calc-activity" class="track-input app-modal-input" required>
+        <option value="">Select</option>
+        <option value="1.2">Sedentary (little or no exercise)</option>
+        <option value="1.375">Lightly Active (1&ndash;3 days/week)</option>
+        <option value="1.55">Moderately Active (3&ndash;5 days/week)</option>
+        <option value="1.725">Very Active (6&ndash;7 days/week)</option>
+        <option value="1.9">Extra Active (physical job or 2x training)</option>
+      </select>
+      <div class="app-modal-actions">
+        <button type="button" class="session-cta-btn" data-calc-action="calories">Calculate</button>
+      </div>
+      <div class="calc-results" id="calories-results" aria-live="polite"></div>
+    </section>
+
+    <section class="calc-panel" id="calc-panel-protein" role="tabpanel" hidden>
+      <label class="app-modal-label" for="protein-weight">Weight (kg)</label>
+      <input id="protein-weight" class="track-input app-modal-input" type="number" min="1" step="0.1" required>
+      <label class="app-modal-label" for="protein-goal">Goal</label>
+      <select id="protein-goal" class="track-input app-modal-input" required>
+        <option value="">Select</option>
+        <option value="cutting">Cutting (Fat Loss)</option>
+        <option value="maintenance">Maintenance</option>
+        <option value="bulking">Bulking (Muscle Gain)</option>
+      </select>
+      <label class="app-modal-label" for="protein-level">Training Level</label>
+      <select id="protein-level" class="track-input app-modal-input" required>
+        <option value="">Select</option>
+        <option value="beginner">Beginner (less than 1 year)</option>
+        <option value="intermediate">Intermediate (1&ndash;3 years)</option>
+        <option value="advanced">Advanced (3+ years)</option>
+      </select>
+      <div class="app-modal-actions">
+        <button type="button" class="session-cta-btn" data-calc-action="protein">Calculate</button>
+      </div>
+      <div class="calc-results" id="protein-results" aria-live="polite"></div>
+    </section>
+  </div>
+</div>
 {% endblock %}

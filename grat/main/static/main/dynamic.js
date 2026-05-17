@@ -1491,3 +1491,205 @@ function toEmbeddableVideoUrl(rawUrl) {
     return rawUrl;
   }
 }
+
+function initCalculatorPage() {
+  const workoutView = document.getElementById("workout-plan-view");
+  const calculatorView = document.getElementById("calculator-view");
+  const calculatorCard = document.getElementById("calculator-page-card");
+  if (!calculatorView || !calculatorCard) return;
+  if (document.documentElement.dataset.calculatorPageReady === "true") return;
+  document.documentElement.dataset.calculatorPageReady = "true";
+
+  window.showCalculatorPage = () => {
+    if (workoutView) workoutView.hidden = true;
+    calculatorView.hidden = false;
+    history.replaceState(null, "", "#calculator-view");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    return false;
+  };
+
+  window.showWorkoutPlanPage = () => {
+    calculatorView.hidden = true;
+    if (workoutView) workoutView.hidden = false;
+    resetCalculatorPage(calculatorCard);
+    history.replaceState(null, "", "#workout-plan-view");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    return false;
+  };
+
+  document.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+
+    if (findCalculatorTrigger(target)) {
+      event.preventDefault();
+      event.stopPropagation();
+      window.showCalculatorPage();
+      return;
+    }
+
+    if (findWorkoutPlanTrigger(target)) {
+      event.preventDefault();
+      event.stopPropagation();
+      window.showWorkoutPlanPage();
+      return;
+    }
+
+    const tab = target.closest(".calc-tab-btn");
+    if (tab && calculatorCard.contains(tab)) {
+      switchCalculatorTab(calculatorCard, tab.dataset.calcTab);
+      return;
+    }
+
+    const action = target.closest("[data-calc-action]");
+    if (action && calculatorCard.contains(action)) {
+      if (action.dataset.calcAction === "calories") calculateCalories(calculatorCard);
+      if (action.dataset.calcAction === "protein") calculateProtein(calculatorCard);
+    }
+  }, true);
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initCalculatorPage);
+} else {
+  initCalculatorPage();
+}
+
+function findCalculatorTrigger(target) {
+  const trigger = target.closest("#open-calculator-btn, a[href='#calculator'], a[href='#calculator-view']");
+  if (trigger) return trigger;
+
+  const navLink = target.closest(".site-nav a");
+  return navLink?.textContent.trim().toLowerCase() === "calculator" ? navLink : null;
+}
+
+function findWorkoutPlanTrigger(target) {
+  const trigger = target.closest("#open-workout-plan-btn, a[href='#workout-plan-view']");
+  if (trigger) return trigger;
+
+  const navLink = target.closest(".site-nav a");
+  return navLink?.textContent.trim().toLowerCase() === "workout plan" ? navLink : null;
+}
+
+function resetCalculatorPage(card) {
+  card.querySelectorAll("input").forEach((input) => {
+    input.value = "";
+  });
+  card.querySelectorAll("select").forEach((select) => {
+    select.selectedIndex = 0;
+  });
+  card.querySelectorAll(".calc-results").forEach((result) => {
+    result.innerHTML = "";
+    result.classList.remove("visible");
+  });
+  switchCalculatorTab(card, "calories");
+  hideCalculatorError(card);
+}
+
+function switchCalculatorTab(card, targetTab) {
+  card.querySelectorAll(".calc-tab-btn").forEach((tab) => {
+    const isActive = tab.dataset.calcTab === targetTab;
+    tab.classList.toggle("active", isActive);
+    tab.setAttribute("aria-selected", String(isActive));
+  });
+  card.querySelectorAll(".calc-panel").forEach((panel) => {
+    panel.hidden = panel.id !== `calc-panel-${targetTab}`;
+  });
+  hideCalculatorError(card);
+}
+
+function calculateCalories(card) {
+  const weight = readPositiveNumber("calc-weight");
+  const height = readPositiveNumber("calc-height");
+  const age = readPositiveNumber("calc-age");
+  const sex = document.getElementById("calc-sex")?.value;
+  const activity = readPositiveNumber("calc-activity");
+  const results = document.getElementById("calories-results");
+
+  if (!weight || !height || !age || !sex || !activity || !results) {
+    showCalculatorError(card, "Please fill in all calorie calculator fields with valid values.");
+    return;
+  }
+
+  hideCalculatorError(card);
+
+  // Calculate calorie targets from BMR/TDEE, then render maintenance, fat-loss, and muscle-gain result cards.
+  const bmr = sex === "male"
+    ? (10 * weight) + (6.25 * height) - (5 * age) + 5
+    : (10 * weight) + (6.25 * height) - (5 * age) - 161;
+  const tdee = Math.round(bmr * activity);
+
+  results.innerHTML = `
+    <div class="calc-result-card">
+      <span class="calc-result-label">Maintenance</span>
+      <strong class="calc-result-value">${tdee} cal</strong>
+      <span class="calc-result-note">Maintain current weight</span>
+    </div>
+    <div class="calc-result-card result-cut">
+      <span class="calc-result-label">Fat Loss</span>
+      <strong class="calc-result-value">${Math.max(tdee - 500, 0)} cal</strong>
+      <span class="calc-result-note">~0.5 kg/week loss</span>
+    </div>
+    <div class="calc-result-card result-bulk">
+      <span class="calc-result-label">Muscle Gain</span>
+      <strong class="calc-result-value">${tdee + 300} cal</strong>
+      <span class="calc-result-note">~0.3 kg/week gain</span>
+    </div>
+  `;
+  results.classList.add("visible");
+}
+
+function calculateProtein(card) {
+  const weight = readPositiveNumber("protein-weight");
+  const goal = document.getElementById("protein-goal")?.value;
+  const level = document.getElementById("protein-level")?.value;
+  const results = document.getElementById("protein-results");
+
+  const proteinRates = {
+    cutting: { beginner: 2.0, intermediate: 2.2, advanced: 2.4 },
+    maintenance: { beginner: 1.6, intermediate: 1.8, advanced: 2.0 },
+    bulking: { beginner: 1.8, intermediate: 2.0, advanced: 2.2 },
+  };
+  const rate = proteinRates[goal]?.[level];
+
+  if (!weight || !goal || !level || !rate || !results) {
+    showCalculatorError(card, "Please fill in all protein calculator fields with valid values.");
+    return;
+  }
+
+  hideCalculatorError(card);
+
+  // Calculate the protein target from bodyweight and goal/training level, then render daily and per-meal guidance.
+  const dailyProtein = Math.round(weight * rate);
+  const perMeal = Math.round(dailyProtein / 4);
+  const resultClass = goal === "cutting" ? " result-cut" : goal === "bulking" ? " result-bulk" : "";
+
+  results.innerHTML = `
+    <div class="calc-result-card${resultClass}">
+      <span class="calc-result-label">Daily Protein Target</span>
+      <strong class="calc-result-value">${dailyProtein} g/day</strong>
+      <span class="calc-result-note">Per Meal (&divide;4): ${perMeal} g/meal</span>
+      <span class="calc-result-note">Spread across 4 meals for optimal absorption.</span>
+    </div>
+  `;
+  results.classList.add("visible");
+}
+
+function readPositiveNumber(id) {
+  const value = Number(document.getElementById(id)?.value);
+  return Number.isFinite(value) && value > 0 ? value : null;
+}
+
+function showCalculatorError(card, message) {
+  const error = card.querySelector("#calculator-error");
+  if (!error) return;
+  error.textContent = message;
+  error.classList.remove("is-hidden");
+}
+
+function hideCalculatorError(card) {
+  const error = card.querySelector("#calculator-error");
+  if (!error) return;
+  error.textContent = "";
+  error.classList.add("is-hidden");
+}
