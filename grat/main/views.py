@@ -338,3 +338,13 @@ def active_session(request):
             "is_completed": session.is_completed,
         }
     }, status=status.HTTP_200_OK)
+
+@api_view(["GET"])
+def custom_404(request,exception = None):
+    referer = request.META.get('HTTP_REFERER')
+    if referer:
+        return redirect(referer)
+    if request.user.is_authenticated:
+        return redirect('main:index')
+    else:
+        return redirect('main:login_view')
