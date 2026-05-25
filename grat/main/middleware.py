@@ -2,7 +2,8 @@ from django.core.cache import cache
 from django.http import JsonResponse
 from django.shortcuts import redirect
 import time
-
+import logging
+logger = logging.getLogger(__name__)
 
 class RateLimitMiddleware:
     def __init__(self, get_response):
@@ -18,6 +19,9 @@ class RateLimitMiddleware:
         
         request_count = cache.get(cache_key,0)
         if request_count > self.rate_limit:
+            logger.warning(
+                f'Rate limit exceeded — IP: {ip} | path: {path} | method: {method} | count: {request_count}'
+            )
             return JsonResponse(
                 {
                     'error': 'Rate limit exceeded',
@@ -27,7 +31,9 @@ class RateLimitMiddleware:
                 },
                 status=429
             )
-        
+        logger.debug(
+             f'Request allowed — IP: {ip} | path: {path} | count: {request_count}/{self.rate_limit}'
+        )
         if request_count == 0:
             cache.set(cache_key,1,timeout = self.time_window)
         else:

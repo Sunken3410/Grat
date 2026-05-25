@@ -159,3 +159,30 @@ else:
             'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         }
     }
+LOGGING ={
+    'version':1,
+    'disable_existing_loggers':False,
+    'formatters':{
+        'verbose':{
+        'format': '[{levelname}] {asctime} {module} {message} {extra_info}',
+            'style': '{',
+        },
+    },
+    'handlers':{
+        'console':{
+            'class':'logging.StreamHandler',
+            'formatter':'verbose',
+        },
+    },
+    'loggers':{
+        'django':{
+            'handlers':['console'],
+            'level':'WARNING',
+        },
+        'main':{
+            'handlers':['console'],
+            'level':'DEBUG',
+            'propagate':False,
+        },
+    }
+}
